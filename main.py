@@ -1,19 +1,31 @@
 import os
 import time
+import numpy as np
 
 from DrissionPage import Chromium, ChromiumOptions
 from DrissionPage.common import Keys
 
 from config import send_messages, excel_data_path, switch_status, output_excel_path
 from logger_config import logger
-from utils import read_excel, load_processed_clients, load_failed_clients, save_to_csv
+from utils import read_excel, load_processed_clients, save_to_csv, read_csv
 
 # 读取数据
 excel_order_nums = [str(*excel_order_num).replace('\t', '') for excel_order_num in read_excel(excel_data_path).values]
 
+logger.info(f'共计有{len(excel_order_nums)}条待发送消息')
+
 # 加载已处理的客户
 client_set = load_processed_clients(output_excel_path)
-client_data = []
+client_data = read_csv(output_excel_path).values
+# logger.info(client_data)
+logger.info(f'加载了{len(client_set)}个已处理过的客户')
+
+# 这里做数据差集，去除已处理的客户
+excel_order_nums = list(set(excel_order_nums) - client_set)
+logger.info(f'将从{excel_order_nums[0]}开始发送')
+logger.info(f'差集后剩余{len(excel_order_nums)}条待发送消息')
+# logger.info("6917920175080767044" in excel_order_nums)
+# input("Press any key to start")
 
 path = r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'  # 请改为你电脑内Chrome可执行文件路径
 co = ChromiumOptions().set_paths(
@@ -112,7 +124,7 @@ for excel_order_num in excel_order_nums:
                     logger.info(f"开始上传图片{os.path.abspath(message)}")
                     # 点击发送
                     time.sleep(1)
-                    feige_send = tab.ele('xpath=/html/body/div[7]/div/div[3]/div[3]')
+                    feige_send = tab.ele('xpath=/html/body/div[6]/div/div[3]/div[3]')
                     tab.wait.ele_displayed(feige_send)
                     feige_send.click()
 
@@ -132,10 +144,11 @@ for excel_order_num in excel_order_nums:
             status = "失败"
 
     time.sleep(0.5)
+    # 关闭客户
     tab.actions.key_down(Keys.ESCAPE)
     tab.actions.key_up(Keys.ESCAPE)
     # 添加客户数据到列表
-    client_data.append([excel_order_num, client_name, status])
+    np.vstack((client_data, np.array([excel_order_num, client_name, status])))
 
     # 每处理完一个客户后保存数据
     save_to_csv(output_excel_path, client_data)

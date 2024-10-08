@@ -16,6 +16,15 @@ def read_excel(excel_path, usecols="A") -> pd.DataFrame:
     """
     df = pd.read_excel(excel_path, usecols=usecols, dtype=str)
     return df
+@lru_cache(maxsize=None)
+def read_csv(excel_path) -> pd.DataFrame:
+    """
+    读取CSV文件中的所有数据
+    :param excel_path: CSV文件路径
+    :return: 包含所有数据的DataFrame
+    """
+    df = pd.read_csv(excel_path, dtype=str)
+    return df
 
 
 def save_to_excel(excel_path, data):
@@ -47,9 +56,9 @@ def load_processed_clients(excel_path):
     """
     processed_clients = set()
     if os.path.exists(excel_path):
-        df = pd.read_csv(excel_path)
+        df = pd.read_csv(excel_path, dtype=str)
         # 只加载状态为"发送"或"跳过"的客户
-        processed_clients = set(df[df['状态'].isin(['发送', '跳过'])]['客户名称'])
+        processed_clients = set(df[df['状态'].isin(['发送', '跳过'])]['订单号'])
         logger.info(f"已从 {excel_path} 加载 {len(processed_clients)} 个已处理的客户")
     else:
         logger.info(f"未找到 {excel_path}，将创建新文件")
