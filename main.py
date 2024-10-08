@@ -7,7 +7,7 @@ from DrissionPage.common import Keys
 
 from config import send_messages, excel_data_path, switch_status, output_excel_path
 from logger_config import logger
-from utils import read_excel, load_processed_clients, save_to_csv, read_csv
+from utils import read_excel, load_processed_clients, save_to_csv, read_csv, filter_order_nums
 
 # 读取数据
 excel_order_nums = [str(*excel_order_num).replace('\t', '') for excel_order_num in read_excel(excel_data_path).values]
@@ -15,20 +15,24 @@ excel_order_nums = [str(*excel_order_num).replace('\t', '') for excel_order_num 
 logger.info(f'共计有{len(excel_order_nums)}条待发送消息')
 
 # 加载已处理的客户
-client_set = load_processed_clients(output_excel_path)
-client_data = read_csv(output_excel_path).values
+if os.path.exists(output_excel_path):
+    client_set = load_processed_clients(output_excel_path)
+    client_data = read_csv(output_excel_path).values
+else:
+    client_set = {}
+    client_data = []
 # logger.info(client_data)
 logger.info(f'加载了{len(client_set)}个已处理过的客户')
 
 # 这里做数据差集，去除已处理的客户
-excel_order_nums = list(set(excel_order_nums) - client_set)
+excel_order_nums = filter_order_nums(excel_order_nums, client_set)
 logger.info(f'将从{excel_order_nums[0]}开始发送')
 logger.info(f'差集后剩余{len(excel_order_nums)}条待发送消息')
 # logger.info("6917920175080767044" in excel_order_nums)
 # input("Press any key to start")
 
-path = r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'  # 请改为你电脑内Chrome可执行文件路径
 co = ChromiumOptions().set_paths(
+    browser_path=r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe',  # 请改为你电脑内Chrome可执行文件路径
     local_port=9111,
     user_data_path=r'C:\Users\Administrator\AppData\Local\Microsoft\Edge\User Data'
 )
@@ -148,9 +152,9 @@ for excel_order_num in excel_order_nums:
     tab.actions.key_down(Keys.ESCAPE)
     tab.actions.key_up(Keys.ESCAPE)
     # 添加客户数据到列表
-    np.vstack((client_data, np.array([excel_order_num, client_name, status])))
+    client_data = np.array([[excel_order_num, client_name, status]])
 
-    # 每处理完一个客户后保存数据
+    # 每处理完一个客户后增量保存数据
     save_to_csv(output_excel_path, client_data)
 
     logger.info("-----------------------------")
