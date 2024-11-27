@@ -103,7 +103,7 @@ for excel_order_num in excel_order_nums:
         logger.info(f'客户：{client_name} 已处理过，跳过')
     else:
         # set不存在客户，添加进set
-        client_set.add(client_name)
+        # client_set.add(client_name)
         status = "发送"
 
         try:
@@ -111,13 +111,13 @@ for excel_order_num in excel_order_nums:
                 if message_type == 'text':
                     logger.info(f'正在发送消息：{message}')
                     # 点击输入框
-                    feige_input = tab.ele('xpath=//*[@id="workspace-chat"]/div[3]/div[6]/textarea')
+                    feige_input = tab.ele('xpath=//*[@id="workspace-chat"]/div[3]/div[7]/textarea')
                     # tab.wait.ele_displayed(feige_input)
                     feige_input.click()
                     feige_input.input(message)
                     time.sleep(1)
                     # 点击发送
-                    feige_send = tab.ele('xpath=//*[@id="workspace-chat"]/div[3]/div[6]/div[3]/div[3]/div')
+                    feige_send = tab.ele('xpath=//*[@id="workspace-chat"]/div[3]/div[7]/div[3]/div[3]/div')
                     feige_send.click()
 
                 elif message_type == 'image':
